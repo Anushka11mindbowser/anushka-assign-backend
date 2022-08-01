@@ -134,3 +134,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51LQVquSBTNc3iOhUZLD2PhPsdL9rhSFjCTGbcfdzUiMOOm2FDlungzRNuSUP1QI3vlWJ9i88w10BWWgyHarzbqgO00AzCF9jum'
+

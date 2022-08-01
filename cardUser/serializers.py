@@ -1,11 +1,7 @@
 from dataclasses import fields
 from rest_framework import serializers
-from .models import CardUser, Product, Transaction
+from .models import Product, Transaction
 
-class CardUserSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = CardUser
-        fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,5 +11,5 @@ class ProductSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = ['card_number','status']
 
