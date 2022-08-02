@@ -8,8 +8,10 @@ from cardUser import views
 
 
 urlpatterns = [
-    path('transaction_list', views.TransactionLists.as_view() ),
-    path('webhook', views.StripeWebhookView.as_view())
+    path('webhook', views.StripeWebhookView.as_view()),
+    path('register-product', views.CreateProductView.as_view()),
+    path('getProduct/<pk>', views.RetrieveProductView.as_view()),
+    path('stripeEventListener', views.StripeEventListener.as_view())
   
     
     
