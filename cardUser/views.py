@@ -1,3 +1,5 @@
+from statistics import mode
+from venv import create
 from rest_framework import status
 import json
 from django.shortcuts import redirect
@@ -23,13 +25,18 @@ from rest_framework.generics import (
 # Create your views here.
 
 stripe.api_key = 'sk_test_51LQVquSBTNc3iOhUdGjqlprwTaOkZ7JCCYpP4KWnPaSv1PNi7ZQPqj4vpYEubGPEKdQydIsIO8woROOOF5LqZ1ed00MO7zYgcU'
+product_name = ''
 
+
+
+  
 
 class CreateProductView(CreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = []
 
     def post(self, request, *args, **kwargs):
+        
         serializer = self.serializer_class(data = request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -62,61 +69,62 @@ class RetrieveProductView(RetrieveAPIView):
     
 class StripeWebhookView(CreateAPIView):
     def post(self, request, *args, **kwargs):
+        # product_id = self.kwargs["pk"]
+        # product = Product.objects.get(id=product_id)
+
+        product_name = request.data['product']
+
+        YOUR_DOMAIN = "http://127.0.0.1:8000"
+
         session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
-            'price_data': {
-            
-            'currency': 'inr',
-            'product_data': {
-            'name': 'Apple Airdopes',
-            
-            },
-            'unit_amount': 2000,
-        },
-        
-        'quantity': 1,
-        }],
-        mode='payment',
-        success_url='https://example.com/success',
-        cancel_url='https://example.com/cancel',
+        payment_method_types = ['card'],
+     line_items=[
+                    {
+                        'price': 'price_1LSwnKSBTNc3iOhUef9qb5dW',
+                        'quantity': 1
+                    },
+                ],
+    mode='payment',
+    success_url= YOUR_DOMAIN + '/success/',
+    cancel_url= YOUR_DOMAIN + '/cancel/',
+  )
+
+        return redirect(session.url, code=303)
+
+       
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    event = None
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, ' whsec_695411eb7f544e31b44527694b06cad3d34402c70c50812264308a4e08d62d84'
         )
+    except ValueError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        return Response("Checkout Completed")
-       
-       
+    except stripe.error.SignatureVerificationError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
-       
-    
 
-class StripeEventListener(CreateAPIView):
-    def post(self, request, *args, **kwargs):
-        payload = request.body
-        event = None
+    if event[type] == 'checkout.session.completed':
+        session =event['data']['object']
+        create_order(session)
 
-        try:
-            event = stripe.Event.construct_from(
-            json.loads(payload), stripe.api_key
-            )
-        except ValueError as e:
-        # Invalid payload
-            return Response(status=400)
+    return Response(status=status.HTTP_200_OK)
 
-    # Handle the event
-        if event.type == 'payment_intent.succeeded':
-            payment_intent = event.data.object # contains a stripe.PaymentIntent
-        # Then define and call a method to handle the successful payment intent.
-        # handle_payment_intent_succeeded(payment_intent)
-        elif event.type == 'payment_method.attached':
-            payment_method = event.data.object # contains a stripe.PaymentMethod
-        # Then define and call a method to handle the successful attachment of a PaymentMethod.
-        # handle_payment_method_attached(payment_method)
-    # ... handle other event types
-        else:
-            print('Unhandled event type {}'.format(event.type))
 
-        return Response(status=200)
-    
+def create_order(session):
+    customer_name = session["customer_details"]["name"]
+    customer_email = session["customer_details"]["email"]
+    order_total = session["amount_data"]
+    payment_method = session["payment_method_types"][0]
+    str_amount = str(order_total)
+    paid_amount = str_amount[:-2]    
+
+    Transaction.objects.create(customer_name=customer_name, customer_email=customer_email, product_name = product_name, total_amount = order_total, payment_method=payment_method, paid_amount=paid_amount)
+
     
 
 

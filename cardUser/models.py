@@ -1,5 +1,7 @@
 
+from email.policy import default
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -14,7 +16,11 @@ class Product(models.Model):
     product_price = models.CharField(max_length=5)
 
 class Transaction(models.Model):
-    card_number = models.CharField(max_length=15)
-    status = models.CharField(max_length=11)
+    customer_name = models.CharField(max_length=255, null=True)
+    customer_email = models.CharField(max_length=255,null=True, default="anushkapawar35@gmail.com")
+    product_name =  models.CharField(max_length=255, null=True)
+    total_amount = models.IntegerField(null=True)
+    payment_method = models.CharField(max_length=255, null=True)
+    order_created = models.DateTimeField(default = timezone.now, null=True)
     
 

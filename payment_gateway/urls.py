@@ -17,7 +17,10 @@ from xml.etree.ElementInclude import include
 from django.contrib import admin
 from django.urls import path,include
 
+from cardUser.views import stripe_webhook
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('card/', include('cardUser.urls')  )
+    path('card/', include('cardUser.urls')),
+    path('webhooks_stripe', stripe_webhook)
 ]
