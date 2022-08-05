@@ -21,6 +21,7 @@ from cardUser.views import stripe_webhook
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('card/', include('cardUser.urls')),
-    path('webhooks_stripe', stripe_webhook)
-]
+    path('webhooks_stripe', stripe_webhook)]
+

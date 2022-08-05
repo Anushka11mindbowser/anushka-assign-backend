@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cardUser',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
@@ -75,16 +78,16 @@ WSGI_APPLICATION = 'payment_gateway.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.0/ref/settings/#databaes
 
 DATABASES = {  
     'default': {  
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'card',  
-        'USER': 'root',  
-        'PASSWORD': 'Minakshi@28',  
-        'HOST': '127.0.0.1',  
-        'PORT': '3306',  
+        'NAME': os.getenv('name'),  
+        'USER': os.getenv('user'),  
+        'PASSWORD': os.getenv('password'),  
+        'HOST': os.getenv('db_host'),  
+        'PORT': os.getenv('db_port'),  
         'OPTIONS': {  
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"  
         }  
@@ -135,6 +138,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-STRIPE_PUBLISHABLE_KEY = 'pk_test_51LQVquSBTNc3iOhUZLD2PhPsdL9rhSFjCTGbcfdzUiMOOm2FDlungzRNuSUP1QI3vlWJ9i88w10BWWgyHarzbqgO00AzCF9jum'
+CORS_ALLOW_METHODS =[
+    "DELETE",
+    "OPTIONS",
+    "GET",
+    "PUT",
+    "POST",
+    "PATCH"
+]
 
-WEBHOOK_SECRET = 'whsec_695411eb7f544e31b44527694b06cad3d34402c70c50812264308a4e08d62d84'
+STRIPE_PUBLISHABLE_KEY =  os.getenv('STRIPE_PUBLISHABLE_KEY')
+
+WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET')

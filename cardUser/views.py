@@ -1,11 +1,7 @@
-from statistics import mode
-from venv import create
-from rest_framework import status
-import json
-from django.shortcuts import redirect
 import stripe
+from rest_framework import status
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
 from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Product, Transaction
@@ -24,13 +20,14 @@ from rest_framework.generics import (
 
 # Create your views here.
 
+#Stripe Secret Key
 stripe.api_key = 'sk_test_51LQVquSBTNc3iOhUdGjqlprwTaOkZ7JCCYpP4KWnPaSv1PNi7ZQPqj4vpYEubGPEKdQydIsIO8woROOOF5LqZ1ed00MO7zYgcU'
-product_name = ''
+
 
 
 
   
-
+#View To register a product to send it to frontend
 class CreateProductView(CreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = []
@@ -48,15 +45,17 @@ class CreateProductView(CreateAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-    
+#View to retrieve a product on basis of primary key
 class RetrieveProductView(RetrieveAPIView):
+    #Mentioning serializer and permission classes
     serializer_class = ProductSerializer
     permission_classes = []
 
+    #Get the specific object on basis of primary key
     def get_object(self, pk):
         return Product.objects.get(pk=pk)
         
-
+    #override the get method to retrieve a particular product
     def get(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
         product = self.get_object(pk)
@@ -66,32 +65,42 @@ class RetrieveProductView(RetrieveAPIView):
             "data":serializer.data
         }
         return Response(response, status=status.HTTP_200_OK)
-    
-class StripeWebhookView(CreateAPIView):
+
+
+#View to create a checkout_session    
+class StripePaymentView(CreateAPIView):
     def post(self, request, *args, **kwargs):
         # product_id = self.kwargs["pk"]
         # product = Product.objects.get(id=product_id)
 
-        product_name = request.data['product']
-
+       
+        #Specifying the domain for backend apis
         YOUR_DOMAIN = "http://127.0.0.1:8000"
 
-        session = stripe.checkout.Session.create(
-        payment_method_types = ['card'],
-     line_items=[
-                    {
-                        'price': 'price_1LSwnKSBTNc3iOhUef9qb5dW',
-                        'quantity': 1
-                    },
-                ],
-    mode='payment',
-    success_url= YOUR_DOMAIN + '/success/',
-    cancel_url= YOUR_DOMAIN + '/cancel/',
-  )
 
-        return redirect(session.url, code=303)
+        #Creating a stripe checkout session
+        try:
+            session = stripe.checkout.Session.create(
+            payment_method_types = ['card'],
+        line_items=[
+                        {
+                            'price': 'price_1LSwnKSBTNc3iOhUef9qb5dW',
+                            'quantity': 1
+                        },
+                    ],
+        mode='payment',
+        #URLs on for successful payments and canceled payments
+        success_url= "http://localhost:4200/success-page?success=true",
+        cancel_url= YOUR_DOMAIN + '/cancel/',
+    )
 
-       
+            return redirect(session.url, code=303)
+        except:
+            return Response("Payment Session could not be created", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+#Defining a view for webhooks to listen to stripe events
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
@@ -114,7 +123,7 @@ def stripe_webhook(request):
 
     return Response(status=status.HTTP_200_OK)
 
-
+#Creating a order to push into database
 def create_order(session):
     customer_name = session["customer_details"]["name"]
     customer_email = session["customer_details"]["email"]
@@ -123,7 +132,9 @@ def create_order(session):
     str_amount = str(order_total)
     paid_amount = str_amount[:-2]    
 
-    Transaction.objects.create(customer_name=customer_name, customer_email=customer_email, product_name = product_name, total_amount = order_total, payment_method=payment_method, paid_amount=paid_amount)
+    Transaction.objects.create(customer_name=customer_name, customer_email=customer_email, payment_method=payment_method, total_amount = order_total)
+
+    
 
     
 
