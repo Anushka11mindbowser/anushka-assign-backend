@@ -153,5 +153,5 @@ CORS_ALLOW_METHODS =[
 ]
 
 STRIPE_PUBLISHABLE_KEY = env('stripe_pk')
-WEBHOOK_SECRET = env('webhook_key')
+WEBHOOK_SECRET_KEY = env('webhook_key')
 STRIPE_SECRET_KEY  = env('stripe_sk')
