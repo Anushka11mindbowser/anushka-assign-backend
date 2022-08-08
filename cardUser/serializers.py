@@ -11,5 +11,5 @@ class ProductSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['card_number','status']
+        fields = '__all__'
 

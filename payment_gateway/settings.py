@@ -11,8 +11,11 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-from dotenv import load_dotenv
+import environ
 import os
+
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,6 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-7(+-k8l950wcb7p9wzqqfw&5dh=84@l8#*sw=*y=qyxc70)^^p'
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -83,11 +88,11 @@ WSGI_APPLICATION = 'payment_gateway.wsgi.application'
 DATABASES = {  
     'default': {  
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': os.getenv('name'),  
-        'USER': os.getenv('user'),  
-        'PASSWORD': os.getenv('password'),  
-        'HOST': os.getenv('db_host'),  
-        'PORT': os.getenv('db_port'),  
+        'NAME': env('name'),  
+        'USER': env('user'),  
+        'PASSWORD': env('password'),  
+        'HOST': env('db_host'),  
+        'PORT':  env('db_port'),
         'OPTIONS': {  
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"  
         }  
@@ -147,6 +152,6 @@ CORS_ALLOW_METHODS =[
     "PATCH"
 ]
 
-STRIPE_PUBLISHABLE_KEY =  os.getenv('STRIPE_PUBLISHABLE_KEY')
-
-WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET')
+STRIPE_PUBLISHABLE_KEY = env('stripe_pk')
+WEBHOOK_SECRET = env('webhook_key')
+STRIPE_SECRET_KEY  = env('stripe_sk')

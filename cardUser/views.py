@@ -1,9 +1,15 @@
+from django.http import HttpResponse
+from django.http import HttpRequest
 import stripe
+from django.conf import settings
 from rest_framework import status
 from django.shortcuts import redirect
+from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from payment_gateway.settings import WEBHOOK_SECRET_KEY
 from .models import Product, Transaction
 from .serializers import (
                         TransactionSerializer,
@@ -21,7 +27,9 @@ from rest_framework.generics import (
 # Create your views here.
 
 #Stripe Secret Key
-stripe.api_key = 'sk_test_51LQVquSBTNc3iOhUdGjqlprwTaOkZ7JCCYpP4KWnPaSv1PNi7ZQPqj4vpYEubGPEKdQydIsIO8woROOOF5LqZ1ed00MO7zYgcU'
+stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.webhook_key = settings.WEBHOOK_SECRET_KEY
+stripe.publishable_key = settings.STRIPE_PUBLISHABLE_KEY    
 
 
 
@@ -102,59 +110,78 @@ class StripePaymentView(CreateAPIView):
 
 #Defining a view for webhooks to listen to stripe events
 @csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    event = None
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, ' whsec_695411eb7f544e31b44527694b06cad3d34402c70c50812264308a4e08d62d84'
-        )
-    except ValueError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+def my_webhook_view(request):
+  payload = request.body
+  sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+  event = None
 
-    except stripe.error.SignatureVerificationError:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-    if event[type] == 'checkout.session.completed':
-        session =event['data']['object']
-        create_order(session)
-
-    return Response(status=status.HTTP_200_OK)
-
-#Creating a order to push into database
-def create_order(session):
-    customer_name = session["customer_details"]["name"]
-    customer_email = session["customer_details"]["email"]
-    order_total = session["amount_data"]
-    payment_method = session["payment_method_types"][0]
-    str_amount = str(order_total)
-    paid_amount = str_amount[:-2]    
-
-    Transaction.objects.create(customer_name=customer_name, customer_email=customer_email, payment_method=payment_method, total_amount = order_total)
-
-    
-
-    
-
+  try:
+    event = stripe.Webhook.construct_event(
+      payload, sig_header, stripe.webhook_key
+    )
+  except ValueError as e:
+    # Invalid payload
+    return HttpResponse(status=400)
+  except stripe.error.SignatureVerificationError as e:
+    # Invalid signature
+    return HttpResponse(status=400)
 
   
-        
 
+   
+  # Handle the checkout.session.completed event
+  if event['type'] == 'checkout.session.completed':
+    session = event['data']['object']
 
+    # Save an order in your database, marked as 'awaiting payment'
+    create_order(session)
 
-
-
-
-
-
-
-
-
+    # Check if the order is already paid (for example, from a card payment)
+    #
+    # A delayed notification payment will have an `unpaid` status, as
+    # you're still waiting for funds to be transferred from the customer's
+    # account.
+    
+  elif event['type'] == 'checkout.session.async_payment_succeeded':
+    session = event['data']['object']
 
     
+  
+
+ 
 
 
 
-       
+def create_order(session):
+  # TODO: fill me in
+    customer_name = session["customer_details"]["name"]
+    customer_email = session["customer_details"]["email"]
+    order_total = session["amount_total"]
+    payment_method = session["payment_method_types"][0]
+
+    transaction = {
+        'customer_name' : customer_name,
+        'customer_email': customer_email,
+        'payment_method':payment_method,
+        'order_total':order_total
+
+    }
+
+    serializer = TransactionSerializer(data=transaction)
+    if serializer.is_valid():
+        serializer.save()
+    
+    else:
+        print(serializer.errors)
+        response = {
+            'errors':serializer.errors
+        }
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    # Transaction.objects.create(customer_name=customer_name, customer_email=customer_email, 
+    #                             total_amount=order_total, payment_method=payment_method)
+
+
+     # Passed signature verification
+    return HttpResponse(status=200)

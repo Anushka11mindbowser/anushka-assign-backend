@@ -17,11 +17,11 @@ from xml.etree.ElementInclude import include
 from django.contrib import admin
 from django.urls import path,include
 
-from cardUser.views import stripe_webhook
+from cardUser.views import my_webhook_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('card/', include('cardUser.urls')),
-    path('webhooks_stripe', stripe_webhook)]
+    path('my_webhook_view', my_webhook_view)]
 
